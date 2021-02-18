@@ -36,7 +36,7 @@ def create_app(test_config=None):
     def patch_and_delete_movie(movie_id):
         movie = Movie.query.get(movie_id)
         if  movie is None : 
-            abort(400)
+            abort(404)
 
         if request.method == "PATCH":
             data = request.get_data()
@@ -67,9 +67,9 @@ def create_app(test_config=None):
     
     @app.route('/actors/<actor_id>', methods = ["PATCH", "DELETE"])
     def patch_and_delete_actor(actor_id):
-        actor = Actor.quey.get(actor_id)
+        actor = Actor.query.get(actor_id)
         if actor is None:
-            abort(422)
+            abort(404)
         if request.method == "PATCH":
             data = request.get_data()
             data = json.loads(data)
@@ -137,6 +137,55 @@ def create_app(test_config=None):
             })
         except:
             abort(500)
+
+    #error handlers
+    @app.errorhandler(400)
+    def bad_request(error):
+        return jsonify({
+            'success': False,
+            'error': 400,
+            'message': 'request does not have the specified parameters'
+        }), 400
+
+    @app.errorhandler(401)
+    def unauthorized(error):
+        return jsonify({
+            'success': False,
+            'error': 401,
+            'message': 'credentials are not authorized'
+        }),401
+    
+    @app.errorhandler(403)
+    def forbidden(error):
+        return jsonify({
+            'success': False,
+            'error': 403,
+            'message': 'you dont have permission to access this resource'
+        }), 403
+    
+    @app.errorhandler(404)
+    def not_found(error):
+        return jsonify({
+            'success': False,
+            'error': 404,
+            'message': 'the requested resource does not exist'
+        }), 404
+
+    @app.errorhandler(422)
+    def unproccessable(error):
+        return jsonify({
+            'success': False,
+            'error': 422,
+            'message': 'unproccessable'
+        }), 422
+    
+    @app.errorhandler(500)
+    def server_error(error):
+        return jsonify({
+            'success': False,
+            'error': 500,
+            'message': 'unexpected error at the server'
+        }), 500
                 
     return app
 app = create_app()
