@@ -2,6 +2,7 @@ import os
 from flask import Flask, json,abort, jsonify, request
 from flask_cors import CORS
 from models import Actor, Movie, setup_db
+from auth import AuthError, requires_auth
 
 def create_app(test_config=None):
     app = Flask(__name__)
@@ -9,7 +10,8 @@ def create_app(test_config=None):
     CORS(app)
     #endpoints for actors and movies
     @app.route('/actors', methods=['GET'])
-    def show_actors():
+    @requires_auth('get:actors')
+    def show_actors(jwt):
         actors = Actor.query.all()
         if actors:
             formatted_actors= [i.format() for i in actors]
@@ -21,7 +23,8 @@ def create_app(test_config=None):
             abort(422)
     
     @app.route('/movies', methods=['GET'])
-    def show_movies():
+    @requires_auth('get:movies')
+    def show_movies(jwt):
         movies = Movie.query.all()
         if movies:
             formatted_movies = [m.format() for m in movies]
@@ -32,77 +35,88 @@ def create_app(test_config=None):
         else:
             abort(422)
 
-    @app.route('/movies/<movie_id>', methods=['DELETE', 'PATCH'])
-    def patch_and_delete_movie(movie_id):
+    @app.route('/movies/<movie_id>', methods=['DELETE'])
+    @requires_auth('delete:movies')
+    def delete_movie(jwt, movie_id):
         movie = Movie.query.get(movie_id)
         if  movie is None : 
             abort(404)
+        try:
+            movie.delete()
+            return jsonify({
+                'success': True,
+                'deleted movie': movie.format()
+            })
+        except:
+            abort(500)
 
-        if request.method == "PATCH":
-            data = request.get_data()
-            data = json.loads(data)
-            try:
-                movie.title = data['title']
-                movie.release_date = data['release_date']
-            except:
-                abort(400)
-            try:
-                movie.update()
-                return jsonify({
-                    "success": True,
-                    "updated movie": movie.format()
-                })
-            except:
-                abort(500)
-
-        if request.method == "DELETE":
-            try:
-                movie.delete()
-                return jsonify({
-                    "success" : True,
-                    "deleted movie": movie.format()
-                })
-            except:
-                abort(500)
-    
-    @app.route('/actors/<actor_id>', methods = ["PATCH", "DELETE"])
-    def patch_and_delete_actor(actor_id):
+    @app.route('/movies/<movie_id>', methods=['PATCH'])
+    @requires_auth('patch:movies')
+    def patch_movie(jwt, movie_id):
+        movie = Movie.query.get(movie_id)
+        if movie is None:
+            abort(404)
+        
+        try:
+            data = request.get_json()
+            movie.title = data['title']
+            movie.release_date = data['release_date']
+        except:
+            abort(400)
+        try:
+            movie.update()
+            return jsonify({
+                'success': True,
+                'updated movie': movie.format()
+            })
+        except:
+            abort(500)
+        
+    @app.route('/actors/<actor_id>', methods = ["DELETE"])
+    @requires_auth('delete:actors')
+    def delete_actor(jwt, actor_id):
         actor = Actor.query.get(actor_id)
         if actor is None:
             abort(404)
-        if request.method == "PATCH":
-            data = request.get_data()
-            data = json.loads(data)
-            try:
-                actor.name = data['name']
-                actor.age = data['age']
-                actor.gender = data['gender']
-            except:
-                abort(400)
-                
-            try:
-                actor.update()
-                return jsonify({
-                    "success" : True,
-                    "actor" : actor.format()
-                })
-            except:
-                abort(500)
-        if request.method == "DELETE":
-            try:
-                actor.delete()
-                return jsonify({
-                    "success": True,
-                    "deleted actor": actor.format()
-                })
-            except:
-                abort(500)
+        try:
+            actor.delete()
+            return jsonify({
+                'success': True,
+                'deleted actor': actor.format()
+            })
+        except:
+            abort(500)
+
+    @app.route('/actors/<actor_id>', methods = ['PATCH'])
+    @requires_auth('patch:actors')
+    def patch_actor(jwt, actor_id):
+        actor = Actor.query.get(actor_id)
+        if actor is None:
+            abort(404)
+        
+        try:
+            data = request.get_json()
+            actor.name = data['name']
+            actor.age = data['age']
+            actor.gender = data['gender']
+        except:
+            abort(400)
+        try:
+            actor.update()
+            return jsonify({
+                'success': True,
+                'updated actor': actor.format()
+            })
+        except:
+            abort(500)
+        
         
     @app.route('/movies/new', methods=["POST"])
-    def create_movie():
-        data = request.get_data()
-        data = json.loads(data)
+    @requires_auth('post:movies')
+    def create_movie(jwt):
+        
         try:
+            data = request.get_json()
             title = data['title']
             release_date = data['release_date']
         except:
@@ -118,10 +132,11 @@ def create_app(test_config=None):
             abort(500)
         
     @app.route('/actors/new', methods=["POST"])
-    def create_actor():
-        data = request.get_data()
-        data = json.loads(data)
+    @requires_auth('post:actors')
+    def create_actor(jwt):
+        
         try:
+            data = request.get_json()
             name = data['name']
             age = data['age']
             gender = data['gender']
@@ -144,7 +159,7 @@ def create_app(test_config=None):
         return jsonify({
             'success': False,
             'error': 400,
-            'message': 'request does not have the specified parameters'
+            'message': 'Bad request. please make sure that: all variables exists in the body, variables are spelled correct, request body is JSON formatted.'
         }), 400
 
     @app.errorhandler(401)

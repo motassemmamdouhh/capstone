@@ -5,6 +5,9 @@ from flask_sqlalchemy import SQLAlchemy
 from app import create_app
 from models import setup_db, Actor, Movie
 
+#THIS TESTCASE IS MADE TO TEST THE BEHAVIOR OF THE ENDPOINTS BEFORE THE AUTHENTICATION ADDED
+#AUTHENTICATION AND ROLE BASED ACCESS TEST IS AT THE POSTMAN COLLECTION
+
 class AgencyTestCase(unittest.TestCase):
     def setUp(self):
         self.app = create_app()
