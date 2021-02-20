@@ -4,10 +4,10 @@ from flask_sqlalchemy import SQLAlchemy
 import json
 # deploying a local database to test the app localy
 
-#database_path= 'postgresql://postgres:77288399@localhost:5432/casting'
+database_path= 'postgresql://postgres:77288399@localhost:5432/casting'
 #altering database path for heroku deployment
 
-database_path = os.environ['DATABASE_URL']
+#database_path = os.environ['DATABASE_URL']
 
 db = SQLAlchemy()
 
@@ -55,9 +55,9 @@ class Movie(db.Model):
 class Actor(db.Model):
     __tablename__ = "actors"
     id  = db.Column(db.Integer(), primary_key= True)
-    name= db.Column(db.String())
+    name= db.Column(db.String(120))
     age= db.Column(db.Integer())
-    gender=db.Column(db.String())
+    gender=db.Column(db.String(120))
 
     def __init__(self, name, age, gender):
         self.name = name
