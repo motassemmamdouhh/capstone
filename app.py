@@ -9,6 +9,10 @@ def create_app(test_config=None):
     setup_db(app)
     CORS(app)
     #endpoints for actors and movies
+    @app.route('/')
+    def index():
+        return "welcome to the website"
+    
     @app.route('/actors', methods=['GET'])
     @requires_auth('get:actors')
     def show_actors(jwt):
