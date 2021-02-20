@@ -4,10 +4,10 @@ from flask_sqlalchemy import SQLAlchemy
 import json
 # deploying a local database to test the app localy
 
-database_path= 'postgresql://postgres:77288399@localhost:5432/casting'
+#database_path= 'postgresql://postgres:77288399@localhost:5432/casting'
 #altering database path for heroku deployment
 
-#database_path = os.environ['DATABASE_URL']
+database_path = os.environ['DATABASE_URL']
 
 db = SQLAlchemy()
 
